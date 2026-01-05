@@ -14,11 +14,12 @@ import {
   Clock,
   Lock,
   AlertOctagon,
-  RefreshCw
+  RefreshCw,
+  Image
 } from "lucide-react";
 
 interface CheckResult {
-  passed: boolean;
+  passed: boolean | null;
   message: string;
   severity?: "success" | "warning" | "danger";
 }
@@ -30,15 +31,21 @@ interface VerificationResultProps {
     isSecure: CheckResult;
     isEstablished: CheckResult;
     isSuspicious: CheckResult;
-  };
+  } | null;
   emailChecks: {
     isFreeEmail: CheckResult;
     matchesCompany: CheckResult;
-  };
+  } | null;
   descriptionChecks: {
     flags: string[];
     riskLevel: "low" | "medium" | "high";
-  };
+  } | null;
+  imageAnalysis: {
+    textExtracted: boolean;
+    suspiciousContent: boolean;
+    confidence: number;
+  } | null;
+  imagesAnalyzed: number;
   mlPrediction: {
     confidence: number;
     prediction: "safe" | "risky" | "uncertain";
@@ -52,6 +59,8 @@ export const VerificationResult = ({
   websiteChecks,
   emailChecks,
   descriptionChecks,
+  imageAnalysis,
+  imagesAnalyzed,
   mlPrediction,
   onReset,
 }: VerificationResultProps) => {
@@ -126,66 +135,113 @@ export const VerificationResult = ({
       {/* Detailed Analysis */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Website Analysis */}
-        <Card className="p-5 bg-card border-border/50">
-          <div className="flex items-center gap-2 mb-4">
-            <Globe className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Website Analysis</h3>
-          </div>
-          <div className="space-y-3">
-            {renderCheckItem(websiteChecks.isSecure, "SSL Security", <Lock className="h-4 w-4" />)}
-            {renderCheckItem(websiteChecks.isEstablished, "Domain Age", <Clock className="h-4 w-4" />)}
-            {renderCheckItem(websiteChecks.isSuspicious, "Suspicious Activity", <AlertOctagon className="h-4 w-4" />)}
-          </div>
-        </Card>
+        {websiteChecks && (
+          <Card className="p-5 bg-card border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Website Analysis</h3>
+            </div>
+            <div className="space-y-3">
+              {renderCheckItem(websiteChecks.isSecure, "SSL Security", <Lock className="h-4 w-4" />)}
+              {renderCheckItem(websiteChecks.isEstablished, "Domain Age", <Clock className="h-4 w-4" />)}
+              {renderCheckItem(websiteChecks.isSuspicious, "Suspicious Activity", <AlertOctagon className="h-4 w-4" />)}
+            </div>
+          </Card>
+        )}
 
         {/* Email Analysis */}
-        <Card className="p-5 bg-card border-border/50">
-          <div className="flex items-center gap-2 mb-4">
-            <Mail className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Email Analysis</h3>
-          </div>
-          <div className="space-y-3">
-            {renderCheckItem(emailChecks.isFreeEmail, "Email Provider", <Mail className="h-4 w-4" />)}
-            {renderCheckItem(emailChecks.matchesCompany, "Company Match", <Shield className="h-4 w-4" />)}
-          </div>
-        </Card>
+        {emailChecks && (
+          <Card className="p-5 bg-card border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <Mail className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Email Analysis</h3>
+            </div>
+            <div className="space-y-3">
+              {renderCheckItem(emailChecks.isFreeEmail, "Email Provider", <Mail className="h-4 w-4" />)}
+              {renderCheckItem(emailChecks.matchesCompany, "Company Match", <Shield className="h-4 w-4" />)}
+            </div>
+          </Card>
+        )}
 
         {/* Job Description Analysis */}
-        <Card className="p-5 bg-card border-border/50">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Description Analysis</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm text-muted-foreground">Risk Level:</span>
-              <Badge variant={
-                descriptionChecks.riskLevel === "low" ? "default" :
-                descriptionChecks.riskLevel === "medium" ? "secondary" :
-                "destructive"
-              }>
-                {descriptionChecks.riskLevel.toUpperCase()}
-              </Badge>
+        {descriptionChecks && (
+          <Card className="p-5 bg-card border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Description Analysis</h3>
             </div>
-            {descriptionChecks.flags.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Suspicious phrases found:</p>
-                <div className="flex flex-wrap gap-2">
-                  {descriptionChecks.flags.map((flag, i) => (
-                    <Badge key={i} variant="outline" className="text-danger border-danger/30 bg-danger/5">
-                      {flag}
-                    </Badge>
-                  ))}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm text-muted-foreground">Risk Level:</span>
+                <Badge variant={
+                  descriptionChecks.riskLevel === "low" ? "default" :
+                  descriptionChecks.riskLevel === "medium" ? "secondary" :
+                  "destructive"
+                }>
+                  {descriptionChecks.riskLevel.toUpperCase()}
+                </Badge>
+              </div>
+              {descriptionChecks.flags.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Suspicious phrases found:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {descriptionChecks.flags.map((flag, i) => (
+                      <Badge key={i} variant="outline" className="text-danger border-danger/30 bg-danger/5">
+                        {flag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-success">No suspicious phrases detected</p>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* Image Analysis */}
+        {imageAnalysis && (
+          <Card className="p-5 bg-card border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <Image className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Image Analysis</h3>
+              <Badge variant="outline" className="ml-auto">{imagesAnalyzed} image(s)</Badge>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <CheckCircle2 className={`h-4 w-4 mt-0.5 ${imageAnalysis.textExtracted ? "text-success" : "text-muted-foreground"}`} />
+                <div>
+                  <span className="text-sm font-medium text-foreground">Text Extraction</span>
+                  <p className="text-sm text-muted-foreground">
+                    {imageAnalysis.textExtracted ? "Text successfully extracted from images" : "No text found in images"}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-success">No suspicious phrases detected</p>
-            )}
-          </div>
-        </Card>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                {imageAnalysis.suspiciousContent ? (
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-warning" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-success" />
+                )}
+                <div>
+                  <span className="text-sm font-medium text-foreground">Content Check</span>
+                  <p className="text-sm text-muted-foreground">
+                    {imageAnalysis.suspiciousContent 
+                      ? "Potential suspicious content detected in images" 
+                      : "No suspicious content detected"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm text-muted-foreground">Analysis Confidence</span>
+                <span className="text-sm font-semibold text-foreground">{imageAnalysis.confidence}%</span>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* ML Prediction */}
-        <Card className="p-5 bg-card border-border/50">
+        <Card className={`p-5 bg-card border-border/50 ${!websiteChecks && !emailChecks && !descriptionChecks && !imageAnalysis ? 'md:col-span-2' : ''}`}>
           <div className="flex items-center gap-2 mb-4">
             <Brain className="h-5 w-5 text-primary" />
             <h3 className="font-semibold text-foreground">AI Prediction</h3>
@@ -210,6 +266,21 @@ export const VerificationResult = ({
             </p>
           </div>
         </Card>
+
+        {/* No Data Warning */}
+        {!websiteChecks && !emailChecks && !descriptionChecks && !imageAnalysis && (
+          <Card className="p-5 bg-warning/10 border-warning/30 md:col-span-2">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              <div>
+                <h3 className="font-semibold text-foreground">Limited Analysis</h3>
+                <p className="text-sm text-muted-foreground">
+                  Only company name was provided. For a more accurate analysis, please provide job link, recruiter email, description, or upload screenshots.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Action Button */}
