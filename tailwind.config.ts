@@ -80,10 +80,10 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        'glow': '0 0 40px hsl(174 62% 47% / 0.3)',
-        'glow-lg': '0 0 60px hsl(174 62% 47% / 0.4)',
-        'card': '0 4px 6px -1px hsl(217 91% 25% / 0.1), 0 2px 4px -2px hsl(217 91% 25% / 0.1)',
-        'card-hover': '0 20px 25px -5px hsl(217 91% 25% / 0.1), 0 8px 10px -6px hsl(217 91% 25% / 0.1)',
+        'glow': '0 0 50px hsl(160 70% 42% / 0.35)',
+        'glow-lg': '0 0 80px hsl(160 70% 42% / 0.45)',
+        'card': '0 4px 12px -2px hsl(230 75% 50% / 0.1), 0 2px 6px -2px hsl(230 75% 50% / 0.06)',
+        'card-hover': '0 24px 48px -8px hsl(230 75% 50% / 0.15), 0 8px 16px -6px hsl(230 75% 50% / 0.08)',
       },
       keyframes: {
         "accordion-down": {
